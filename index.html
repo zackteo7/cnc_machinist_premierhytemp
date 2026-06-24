@@ -1513,6 +1513,8 @@ function generatePDF() {
   <span style="font-size:9pt;font-weight:700;">${get('position')}</span>
 </div>
 
+<!-- ══════════ PAGE 1 ══════════ -->
+
 <!-- Section 1 -->
 <div class="sec-hdr">1) Personal Particulars &nbsp;&nbsp;(Please ✓ )</div>
 <div class="sec-body">
@@ -1574,7 +1576,7 @@ function generatePDF() {
     </tr></thead>
     <tbody>
       ${familyRows.map(row=>`<tr>${row.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
-      ${Array(Math.max(0,5-familyRows.length)).fill(`<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>`).join('')}
+      ${Array(Math.max(0,5-familyRows.length)).fill(`<tr><td style="padding:4px 2px;">&nbsp;</td><td></td><td></td><td></td><td></td></tr>`).join('')}
     </tbody>
   </table>
 </div>
@@ -1593,9 +1595,11 @@ function generatePDF() {
   </div>`).join('')}
 </div>
 
-<!-- Page Break: End of Page 1 -->
+<!-- PAGE 1 FOOTER + BREAK -->
 <div class="page-num">Page 1 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
 <div class="page-break"></div>
+
+<!-- ══════════ PAGE 2 ══════════ -->
 
 <!-- Section 5 -->
 <div class="sec-hdr">5) Special / Technical Skills (Please list the skills you have, type of program used or speed)</div>
@@ -1632,9 +1636,11 @@ function generatePDF() {
   <div class="frow"><div class="fgroup" style="flex:0.6;"><span class="flbl">Expected Salary (S$) :</span><span class="fval">${get('expected_salary')}</span></div></div>
 </div>
 
-<!-- Page Break: End of Page 2 -->
+<!-- PAGE 2 FOOTER + BREAK -->
 <div class="page-num">Page 2 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
 <div class="page-break"></div>
+
+<!-- ══════════ PAGE 3 ══════════ -->
 
 <!-- Section 8 -->
 <div class="sec-hdr">8) Other Information</div>
@@ -1649,7 +1655,7 @@ function generatePDF() {
     <span class="flbl">b. Driving License :</span>
     <span class="radio-opt">${getRadio('driving')==='Yes'?'●':'○'} Yes</span>
     <span class="radio-opt">${getRadio('driving')==='No'?'●':'○'} No</span>
-    <span class="flbl">(if YES, state class :</span>
+    <span class="flbl" style="margin-left:6px;">(if YES, state class :</span>
     <span class="fval" style="max-width:50px;">${get('driving_class')}</span>
     <span class="flbl">)</span>
   </div>
@@ -1683,7 +1689,7 @@ function generatePDF() {
   <p class="decl-text">I declare that the above information and documents attached hereto are true and to the best of my knowledge and belief, and I have not wilfully suppressed any materials. I understand that any false answers or statements made by me on this application or any supplement thereto will be sufficient cause for my dismissal from the company\'s service without any notice or monies in lieu.</p>
   <div class="sig-row">
     <div class="sig-block">
-      ${appSigDataURL?`<img src="${appSigDataURL}" class="sig-img">`:'<div style="height:40px;"></div>'}
+      ${appSigDataURL?`<img src="${appSigDataURL}" class="sig-img">`:'<div style="height:44px;"></div>'}
       <div class="sig-line">Signature of Applicant</div>
     </div>
     <div class="sig-date">
@@ -1693,13 +1699,13 @@ function generatePDF() {
   </div>
 </div>
 
-<!-- Comments -->
+<!-- Comments by Interviewer -->
 <div class="sec-hdr">Comments by Interviewer</div>
 <div class="sec-body">
   <div class="comments-box"></div>
   <div class="sig-row">
     <div class="sig-block">
-      ${intSigDataURL?`<img src="${intSigDataURL}" class="sig-img">`:'<div style="height:40px;"></div>'}
+      ${intSigDataURL?`<img src="${intSigDataURL}" class="sig-img">`:'<div style="height:44px;"></div>'}
       <div class="sig-line">Signature of Interviewer</div>
     </div>
     <div class="sig-date">
