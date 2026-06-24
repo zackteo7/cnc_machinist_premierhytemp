@@ -153,22 +153,22 @@
   }
 
   .form-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     text-align: center;
     text-decoration: underline;
     letter-spacing: 2px;
-    margin: 8px 0 20px;
+    margin: 6px 0 14px;
   }
 
   /* Section headers */
   .section-header {
     background: #ffd966;
     border: 1px solid #bbb;
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 3px 8px;
+    font-size: 11px;
     font-weight: 700;
-    margin-top: 14px;
+    margin-top: 12px;
     margin-bottom: 0;
     color: #000;
   }
@@ -176,15 +176,16 @@
   .section-body {
     border: 1px solid #bbb;
     border-top: none;
-    padding: 8px 10px;
+    padding: 6px 10px;
+    font-size: 10px;
   }
 
   /* Generic form row */
   .form-row {
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
     flex-wrap: wrap;
   }
   .form-row:last-child { margin-bottom: 0; }
@@ -198,7 +199,7 @@
   }
 
   label.fl {
-    font-size: 11px;
+    font-size: 10px;
     white-space: nowrap;
     color: #333;
     flex-shrink: 0;
@@ -209,12 +210,18 @@
     border-bottom: 1px solid #555;
     outline: none;
     font-family: Arial, sans-serif;
-    font-size: 11px;
-    padding: 1px 3px;
+    font-size: 10px;
+    padding: 0px 2px;
+    line-height: 1.2;
+    height: 16px;
     flex: 1;
-    min-width: 60px;
+    min-width: 40px;
     background: transparent;
     color: #000;
+  }
+  textarea.fi {
+    height: auto;
+    line-height: 1.4;
   }
   input.fi:focus, select.fi:focus, textarea.fi:focus {
     border-bottom-color: #1a3a5c;
@@ -259,8 +266,8 @@
     margin-top: 4px;
     margin-bottom: 0;
   }
-  .position-row label { font-size: 12px; font-weight: 700; white-space: nowrap; }
-  .position-row input { font-size: 12px; font-weight: 600; }
+  .position-row label { font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .position-row input { font-size: 11px; font-weight: 600; }
 
   /* Family table */
   table.family-table {
@@ -273,17 +280,19 @@
     border-bottom: 1px solid #777;
     text-align: center;
     font-weight: 700;
-    font-size: 11px;
-    padding: 2px 4px;
+    font-size: 10px;
+    padding: 2px 3px;
     text-decoration: underline;
   }
   table.family-table td {
     border-bottom: 1px solid #ddd;
-    padding: 1px 2px;
+    padding: 0px 2px;
   }
   table.family-table input.fi {
     width: 100%;
-    min-width: 30px;
+    min-width: 20px;
+    font-size: 10px;
+    height: 15px;
   }
 
   /* Education rows */
@@ -297,17 +306,18 @@
   /* Employment block */
   .emp-block {
     border: 1px solid #ddd;
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
     border-radius: 2px;
-    background: #fafafa;
+    background: white;
+    border-left: 3px solid #1a3a5c;
   }
   .emp-block:last-child { margin-bottom: 0; }
   .emp-block-title {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     color: #555;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -325,12 +335,12 @@
   /* Skills textarea */
   .skills-area {
     width: 100%;
-    font-size: 11px;
+    font-size: 10px;
     border: 1px solid #bbb;
     border-radius: 2px;
-    padding: 6px;
+    padding: 4px 6px;
     resize: vertical;
-    min-height: 50px;
+    min-height: 44px;
     font-family: Arial, sans-serif;
     background: transparent;
     color: #000;
@@ -347,13 +357,13 @@
   }
 
   /* Language table */
-  .lang-table { width: 100%; margin-top: 4px; font-size: 11px; border-collapse: collapse; }
+  .lang-table { width: 100%; margin-top: 4px; font-size: 10px; border-collapse: collapse; }
   .lang-table td { padding: 4px 6px; vertical-align: top; }
   .lang-skill-block { margin-bottom: 5px; }
   .lang-skill-block:last-child { margin-bottom: 0; }
   .lang-skill-label { font-size: 10px; color: #555; font-weight: 600; margin-bottom: 2px; }
   .lang-radio-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .lang-radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; font-size: 11px; }
+  .lang-radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; font-size: 10px; }
 
   /* General section */
   .general-row {
@@ -361,8 +371,8 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid #eee;
-    padding: 5px 0;
-    font-size: 11px;
+    padding: 4px 0;
+    font-size: 10px;
     gap: 8px;
   }
   .general-row:last-child { border-bottom: none; }
@@ -372,9 +382,9 @@
 
   /* Declaration */
   .declaration-text {
-    font-size: 10.5px;
-    line-height: 1.55;
-    margin-bottom: 16px;
+    font-size: 10px;
+    line-height: 1.5;
+    margin-bottom: 12px;
     text-align: justify;
   }
 
@@ -973,7 +983,7 @@ function addEmpBlock() {
     </div>
     <div class="form-row" style="flex-direction:column;align-items:flex-start;gap:2px;">
       <label class="fl">Job Duties :</label>
-      <textarea class="fi" style="width:100%;border:1px solid #bbb;border-radius:2px;padding:4px;min-height:36px;resize:vertical;margin-top:2px;" placeholder="Describe key duties and responsibilities..."></textarea>
+      <textarea class="fi" style="width:100%;border:1px solid #bbb;border-radius:2px;padding:3px 4px;min-height:30px;resize:vertical;margin-top:2px;font-size:10px;" placeholder="Describe key duties and responsibilities..."></textarea>
     </div>
   `;
   section.appendChild(div);
