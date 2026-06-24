@@ -1223,6 +1223,127 @@ async function submitForm() {
   }
 }
 
+// ===== SIGNATURE PAD =====
+const sigState = {};
+
+function initSigPad(id) {
+  const canvas = document.getElementById(id + '-sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  resizeCanvas();
+  sigState[id] = { drawing: false, empty: true, mode: 'draw' };
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  function startDraw(e) {
+    e.preventDefault();
+    sigState[id].drawing = true;
+    sigState[id].empty = false;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+  function draw(e) {
+    e.preventDefault();
+    if (!sigState[id].drawing) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+  function endDraw() { sigState[id].drawing = false; }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', endDraw);
+}
+
+function clearSig(id) {
+  const canvas = document.getElementById(id + '-sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (sigState[id]) sigState[id].empty = true;
+  const typeInput = document.getElementById(id + '-sig-type');
+  const preview = document.getElementById(id + '-sig-preview');
+  if (typeInput) typeInput.value = '';
+  if (preview) { preview.textContent = ''; preview.style.display = 'none'; }
+}
+
+function switchSigTab(id, mode, btn) {
+  const drawWrap = document.getElementById(id + '-draw-wrap');
+  const typeWrap = document.getElementById(id + '-type-wrap');
+  const tabs = btn.closest('.sig-pad-tabs').querySelectorAll('.sig-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (mode === 'draw') {
+    drawWrap.style.display = 'block';
+    typeWrap.style.display = 'none';
+  } else {
+    drawWrap.style.display = 'none';
+    typeWrap.style.display = 'block';
+    const preview = document.getElementById(id + '-sig-preview');
+    const val = document.getElementById(id + '-sig-type') ? document.getElementById(id + '-sig-type').value : '';
+    if (val) preview.style.display = 'block';
+  }
+  if (sigState[id]) sigState[id].mode = mode;
+}
+
+function updateTypeSig(id) {
+  const input = document.getElementById(id + '-sig-type');
+  const preview = document.getElementById(id + '-sig-preview');
+  if (!input || !preview) return;
+  const val = input.value.trim();
+  preview.textContent = val;
+  preview.style.display = val ? 'block' : 'none';
+}
+
+function getSigDataURL(id) {
+  const state = sigState[id];
+  if (!state) return null;
+  if (state.mode === 'draw') {
+    const canvas = document.getElementById(id + '-sig-canvas');
+    if (!canvas || state.empty) return null;
+    return canvas.toDataURL('image/png');
+  } else {
+    const name = document.getElementById(id + '-sig-type') ? document.getElementById(id + '-sig-type').value.trim() : '';
+    if (!name) return null;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = 400; offCanvas.height = 80;
+    const ctx = offCanvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 400, 80);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '40px "Dancing Script", cursive';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, 10, 44);
+    return offCanvas.toDataURL('image/png');
+  }
+}
+
+window.addEventListener('load', function() {
+  initSigPad('applicant');
+  initSigPad('interviewer');
+});
+
 // ===== PDF GENERATION (Print-based clean output) =====
 function generatePDF() {
   const get = id => (document.getElementById(id) && document.getElementById(id).value) ? document.getElementById(id).value.trim() : '';
