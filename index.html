@@ -507,21 +507,23 @@
           <input class="fi" id="name" type="text" style="flex:1;">
         </div>
       </div>
-      <div class="form-row">
-        <div class="field-group" style="flex:1.2;">
+      <div class="form-row" style="flex-wrap:nowrap; align-items:baseline; gap:8px;">
+        <div class="field-group" style="flex:1.1; min-width:0;">
           <label class="fl">FIN No. (if foreigner) :</label>
           <input class="fi" id="fin" type="text">
         </div>
-        <div class="field-group" style="gap:6px;">
-          <label class="fl">Date of Birth (at least aged 18) :</label>
-          <div class="dob-row">
-            <input class="fi" id="dob_d" type="text" placeholder="DD" maxlength="2">
-            <span class="dob-label">(D)</span>
-            <input class="fi" id="dob_m" type="text" placeholder="MM" maxlength="2">
-            <span class="dob-label">(M)</span>
-            <input class="fi" id="dob_y" type="text" placeholder="YYYY" maxlength="4" style="width:52px;">
-            <span class="dob-label">(Y)</span>
-          </div>
+        <div style="display:flex; align-items:baseline; gap:4px; flex-shrink:0;">
+          <label class="fl" style="white-space:nowrap;">Date of Birth :</label>
+          <input class="fi" id="dob_d" type="text" placeholder="DD" maxlength="2" style="width:30px; text-align:center; min-width:0;">
+          <span class="dob-label">(D)</span>
+          <input class="fi" id="dob_m" type="text" placeholder="MM" maxlength="2" style="width:30px; text-align:center; min-width:0;">
+          <span class="dob-label">(M)</span>
+          <input class="fi" id="dob_y" type="text" placeholder="YYYY" maxlength="4" style="width:42px; text-align:center; min-width:0;">
+          <span class="dob-label">(Y)</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:4px; flex-shrink:0;">
+          <label class="fl">Age :</label>
+          <input class="fi" id="age" type="text" style="width:36px; min-width:0;">
         </div>
       </div>
       <div class="form-row">
@@ -532,10 +534,6 @@
         <div class="field-group">
           <label class="fl">Nationality :</label>
           <input class="fi" id="nationality" type="text">
-        </div>
-        <div class="field-group" style="flex:0.4;">
-          <label class="fl">Age :</label>
-          <input class="fi" id="age" type="text" style="width:40px;">
         </div>
       </div>
       <div class="form-row">
