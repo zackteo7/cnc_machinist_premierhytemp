@@ -1225,509 +1225,319 @@ async function submitForm() {
 
 // ===== PDF GENERATION (Print-based clean output) =====
 function generatePDF() {
-  // Collect all form data
-  const get = id => document.getElementById(id)?.value?.trim() || '';
-  const getRadio = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  const get = id => (document.getElementById(id) && document.getElementById(id).value) ? document.getElementById(id).value.trim() : '';
+  const getRadio = function(name) {
+    var el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '';
+  };
+  const sel = function(val, opt) { return val === opt ? '&#9679;' : '&#9675;'; };
 
-  // Family rows
-  const familyRows = [];
-  document.querySelectorAll('#family-tbody tr').forEach(tr => {
-    const cells = tr.querySelectorAll('input[type="text"]');
-    const vals = Array.from(cells).map(c => c.value.trim());
-    if (vals.some(v => v)) familyRows.push(vals);
+  // Collect family rows
+  var familyRows = [];
+  document.querySelectorAll('#family-tbody tr').forEach(function(tr) {
+    var cells = tr.querySelectorAll('input[type="text"]');
+    var vals = Array.from(cells).map(function(c) { return c.value.trim(); });
+    if (vals.some(function(v) { return v; })) familyRows.push(vals);
   });
 
-  // Education blocks
-  const eduBlocks = [];
-  document.querySelectorAll('.edu-block').forEach(block => {
-    const inputs = block.querySelectorAll('input');
-    const vals = Array.from(inputs).map(i => i.value.trim());
-    if (vals.some(v => v)) eduBlocks.push(vals); // [institution, qualification, from, to]
+  // Collect education blocks
+  var eduBlocks = [];
+  document.querySelectorAll('.edu-block').forEach(function(block) {
+    var inputs = block.querySelectorAll('input');
+    var vals = Array.from(inputs).map(function(i) { return i.value.trim(); });
+    if (vals.some(function(v) { return v; })) eduBlocks.push(vals);
   });
 
-  // Employment blocks
-  const empBlocks = [];
-  document.querySelectorAll('.emp-block').forEach(block => {
-    const title = block.querySelector('.emp-block-title')?.textContent || '';
-    const inputs = block.querySelectorAll('input[type="text"]');
-    const ta = block.querySelector('textarea');
-    const vals = Array.from(inputs).map(i => i.value.trim());
-    const duties = ta?.value?.trim() || '';
-    if (vals.some(v => v) || duties) empBlocks.push({ title, vals, duties });
+  // Collect employment blocks
+  var empBlocks = [];
+  document.querySelectorAll('.emp-block').forEach(function(block) {
+    var title = block.querySelector('.emp-block-title') ? block.querySelector('.emp-block-title').textContent : '';
+    var inputs = block.querySelectorAll('input[type="text"]');
+    var ta = block.querySelector('textarea');
+    var vals = Array.from(inputs).map(function(i) { return i.value.trim(); });
+    var duties = ta ? ta.value.trim() : '';
+    if (vals.some(function(v) { return v; }) || duties) empBlocks.push({ title: title, vals: vals, duties: duties });
   });
 
-  // Language rows
-  const langRows = [];
-  document.querySelectorAll('#lang-tbody tr').forEach(tr => {
-    const lang = tr.querySelector('input[type="text"]')?.value?.trim();
+  // Collect language rows
+  var langRows = [];
+  document.querySelectorAll('#lang-tbody tr').forEach(function(tr) {
+    var langInput = tr.querySelector('input[type="text"]');
+    var lang = langInput ? langInput.value.trim() : '';
     if (!lang) return;
-    const blocks = tr.querySelectorAll('.lang-skill-block');
-    const skills = Array.from(blocks).map(b => {
-      const label = b.querySelector('.lang-skill-label')?.textContent?.trim();
-      const checked = b.querySelector('input[type="radio"]:checked')?.closest('label')?.textContent?.trim() || '—';
-      return `${label}: ${checked}`;
+    var blocks = tr.querySelectorAll('.lang-skill-block');
+    var skills = Array.from(blocks).map(function(b) {
+      var lbl = b.querySelector('.lang-skill-label') ? b.querySelector('.lang-skill-label').textContent.trim() : '';
+      var checked = b.querySelector('input[type="radio"]:checked');
+      var prof = checked ? checked.closest('label').textContent.trim() : '-';
+      return lbl + ': ' + prof;
     });
-    langRows.push({ lang, skills });
+    langRows.push({ lang: lang, skills: skills });
   });
 
-  // Signature
-  const appSigDataURL = getSigDataURL('applicant');
-  const intSigDataURL = getSigDataURL('interviewer');
+  // Signatures
+  var appSigDataURL = getSigDataURL('applicant');
+  var intSigDataURL = getSigDataURL('interviewer');
 
-  // ── Build print HTML ──────────────────────────────────────────────────────
-  const yellow = '#FFD966';
-  const navy = '#1A3A5C';
+  var YELLOW = '#FFD966';
+  var NAVY = '#1A3A5C';
 
-  function sectionHeader(text) {
-    return `<div style="background:${yellow};border:1px solid #bbb;padding:4px 8px;font-size:9pt;font-weight:700;margin-top:10px;">${text}</div>`;
+  // Helper: field row HTML (no backticks)
+  function frow(items) {
+    var inner = items.map(function(item) {
+      return '<div class="fgroup" style="flex:' + (item.flex||1) + ';min-width:0;">'
+        + '<span class="flbl">' + item.label + '</span>'
+        + '<span class="fval">' + (item.value||'') + '</span>'
+        + '</div>';
+    }).join('');
+    return '<div class="frow">' + inner + '</div>';
   }
 
-  function sectionBody(inner, extraStyle='') {
-    return `<div style="border:1px solid #bbb;border-top:none;padding:6px 8px;font-size:8pt;${extraStyle}">${inner}</div>`;
+  function secHdr(txt) {
+    return '<div class="sec-hdr">' + txt + '</div>';
+  }
+  function secBody(inner) {
+    return '<div class="sec-body">' + inner + '</div>';
   }
 
-  function fieldRow(items) {
-    // items: [{label, value, flex}]
-    const cells = items.map(({label, value, flex=1}) => `
-      <div style="flex:${flex};min-width:0;display:flex;align-items:baseline;gap:3px;padding:1px 0;">
-        <span style="color:#555;white-space:nowrap;font-size:7.5pt;">${label}</span>
-        <span style="flex:1;border-bottom:1px solid #888;font-size:8pt;padding:0 2px;min-width:0;overflow:hidden;">${value}</span>
-      </div>`).join('');
-    return `<div style="display:flex;gap:8px;margin-bottom:3px;">${cells}</div>`;
+  // Build family table rows
+  var familyTbody = familyRows.map(function(row) {
+    return '<tr>' + row.map(function(v) { return '<td>' + v + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  var emptyFamRows = Math.max(0, 5 - familyRows.length);
+  for (var i = 0; i < emptyFamRows; i++) {
+    familyTbody += '<tr><td style="padding:4px 2px;">&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
   }
 
-  function radioField(label, options, chosen) {
-    const opts = options.map(o =>
-      `<span style="margin-right:8px;">${chosen===o ? '●' : '○'} ${o}</span>`
-    ).join('');
-    return `<span style="color:#555;font-size:7.5pt;">${label}</span> ${opts}`;
-  }
+  // Build education HTML
+  var eduHTML = eduBlocks.map(function(e) {
+    return '<div class="edu-block">'
+      + frow([{label:'Educational Institution:', value:e[0], flex:2}])
+      + frow([{label:'Qualification :', value:e[1], flex:2}])
+      + '<div class="frow">'
+        + '<div class="fgroup"><span class="flbl">From Year :</span><span class="fval" style="max-width:40px;">' + (e[2]||'') + '</span></div>'
+        + '<div class="fgroup"><span class="flbl">To Year :</span><span class="fval" style="max-width:40px;">' + (e[3]||'') + '</span></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
 
-  // DOB parts
-  const dobD = get('dob_d'), dobM = get('dob_m'), dobY = get('dob_y');
-  const dobStr = dobD || dobM || dobY ? `${dobD} (D) &nbsp; ${dobM} (M) &nbsp; ${dobY} (Y)` : '';
+  // Build employment HTML
+  var empHTML = empBlocks.map(function(emp) {
+    return '<div class="emp-block">'
+      + '<div class="emp-title">' + emp.title + '</div>'
+      + frow([{label:'Company Name :', value:emp.vals[0]||'', flex:2}])
+      + frow([{label:'Address :', value:emp.vals[1]||'', flex:2}])
+      + '<div class="frow">'
+        + '<div class="fgroup"><span class="flbl">Position(s) :</span><span class="fval">' + (emp.vals[2]||'') + '</span></div>'
+        + '<div class="fgroup"><span class="flbl">Basic Salary (S$) :</span><span class="fval">' + (emp.vals[3]||'') + '</span></div>'
+        + '<div class="fgroup"><span class="flbl">Fixed Allowance (S$) :</span><span class="fval">' + (emp.vals[4]||'') + '</span></div>'
+      + '</div>'
+      + '<div class="frow">'
+        + '<div class="fgroup"><span class="flbl">Date From (MM/YYYY) :</span><span class="fval">' + (emp.vals[5]||'') + '</span></div>'
+        + '<div class="fgroup"><span class="flbl">Date To (MM/YYYY) :</span><span class="fval">' + (emp.vals[6]||'') + '</span></div>'
+      + '</div>'
+      + '<div class="emp-duties"><span class="flbl">Job Duties :</span> ' + emp.duties + '</div>'
+      + '</div>';
+  }).join('');
 
-  let html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Application for Employment — ${get('name') || 'Applicant'}</title>
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  // Build language HTML
+  var langHTML = langRows.map(function(row) {
+    return '<div class="lang-row">'
+      + '<div class="lang-name">' + row.lang + '</div>'
+      + '<div class="lang-skills">' + row.skills.join(' &nbsp;|&nbsp; ') + '</div>'
+      + '</div>';
+  }).join('');
 
-  /* A4 = 210mm x 297mm. Usable with 12mm margins = 186mm x 273mm */
-  @page {
-    size: A4 portrait;
-    margin: 12mm 14mm;
-  }
+  // Applicant signature block
+  var appSigHTML = appSigDataURL
+    ? '<img src="' + appSigDataURL + '" class="sig-img">'
+    : '<div style="height:44px;"></div>';
 
-  html {
-    font-size: 7.5pt;
-  }
+  // Interviewer signature block
+  var intSigHTML = intSigDataURL
+    ? '<img src="' + intSigDataURL + '" class="sig-img">'
+    : '<div style="height:44px;"></div>';
 
-  body {
-    font-family: Arial, sans-serif;
-    font-size: 7.5pt;
-    color: #000;
-    width: 182mm;       /* 210mm - 2×14mm margins */
-    margin: 0 auto;
-    padding: 10mm 0;    /* top/bottom breathing room in preview */
-    line-height: 1.3;
-  }
+  // DOB
+  var dobD = get('dob_d'), dobM = get('dob_m'), dobY = get('dob_y');
+  var dobStr = (dobD || dobM || dobY) ? dobD + ' (D) &nbsp; ' + dobM + ' (M) &nbsp; ' + dobY + ' (Y)' : '';
 
-  @media print {
-    body {
-      padding: 0;
-      width: 100%;
-    }
-    .no-print { display: none !important; }
-  }
+  // General details
+  var genDetails = get('general_details') ? '<div style="margin-top:4px;font-size:7pt;color:#444;">Details: ' + get('general_details') + '</div>' : '';
 
-  /* Page breaks */
-  .page-break {
-    page-break-before: always;
-    break-before: page;
-    height: 0;
-    display: block;
-  }
+  var html = '<!DOCTYPE html>'
+    + '<html><head><meta charset="UTF-8">'
+    + '<title>Application for Employment - ' + (get('name')||'Applicant') + '</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }'
+    + '@page { size: A4 portrait; margin: 12mm 14mm; }'
+    + 'html { font-size: 7.5pt; }'
+    + 'body { font-family: Arial, sans-serif; font-size: 7.5pt; color: #000; width: 182mm; margin: 0 auto; padding: 8mm 0; line-height: 1.3; }'
+    + '@media print { body { padding: 0; width: 100%; } .no-print { display:none!important; } }'
+    + '.page-break { page-break-before: always; break-before: page; height: 0; display: block; }'
+    + '.sec-hdr { background: ' + YELLOW + '; border: 1px solid #bbb; padding: 3px 6px; font-size: 8pt; font-weight: 700; margin-top: 8px; page-break-after: avoid; }'
+    + '.sec-body { border: 1px solid #bbb; border-top: none; padding: 5px 7px; font-size: 7.5pt; }'
+    + '.frow { display: flex; gap: 6px; margin-bottom: 3px; align-items: baseline; flex-wrap: nowrap; }'
+    + '.fgroup { display: flex; align-items: baseline; gap: 2px; flex: 1; min-width: 0; }'
+    + '.flbl { color: #444; white-space: nowrap; font-size: 7pt; flex-shrink: 0; }'
+    + '.fval { flex: 1; border-bottom: 0.5px solid #777; font-size: 7.5pt; padding: 0 2px 2px 2px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-bottom: 2px; }'
+    + '.radio-opt { margin-right: 6px; font-size: 7pt; }'
+    + '.co-header { text-align: center; margin-bottom: 8px; position: relative; }'
+    + '.co-name { font-size: 12pt; font-weight: 700; letter-spacing: 1px; }'
+    + '.co-sub { font-size: 7.5pt; margin-top: 2px; }'
+    + '.photo-box { position: absolute; right: 0; top: 0; width: 55px; height: 68px; border: 0.5px solid #bbb; display: flex; align-items: center; justify-content: center; font-size: 6pt; color: #aaa; text-align: center; }'
+    + '.form-title { text-align: center; font-size: 10pt; font-weight: 700; text-decoration: underline; letter-spacing: 2px; margin: 6px 0; }'
+    + '.pos-bar { border: 0.5px solid #bbb; padding: 3px 7px; margin-bottom: 4px; display: flex; align-items: baseline; gap: 6px; }'
+    + 'table { border-collapse: collapse; width: 100%; font-size: 7pt; }'
+    + 'th { font-weight: 700; text-decoration: underline; text-align: left; padding: 1px 2px; font-size: 7pt; }'
+    + 'td { padding: 2px 2px; border-bottom: 0.3px solid #eee; font-size: 7pt; }'
+    + '.emp-block { border: 0.5px solid #ddd; border-left: 2.5px solid ' + NAVY + '; padding: 4px 6px; margin-bottom: 5px; page-break-inside: avoid; }'
+    + '.emp-title { font-size: 6.5pt; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 3px; }'
+    + '.emp-duties { margin-top: 2px; font-size: 7pt; }'
+    + '.lang-row { display: flex; gap: 8px; align-items: flex-start; border-bottom: 0.3px solid #eee; padding: 2px 0; }'
+    + '.lang-name { font-weight: 700; min-width: 55px; font-size: 7.5pt; }'
+    + '.lang-skills { font-size: 7pt; color: #333; }'
+    + '.decl-text { font-size: 7pt; line-height: 1.5; text-align: justify; margin-bottom: 12px; }'
+    + '.sig-row { display: flex; gap: 20px; margin-top: 8px; align-items: flex-end; }'
+    + '.sig-block { flex: 1; }'
+    + '.sig-line { border-top: 0.5px solid #555; padding-top: 2px; font-size: 6.5pt; text-align: center; color: #444; margin-top: 4px; }'
+    + '.sig-img { max-width: 140px; max-height: 44px; display: block; margin-bottom: 2px; }'
+    + '.sig-date { flex: 1; display: flex; align-items: baseline; gap: 3px; }'
+    + '.gen-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 0.3px solid #eee; padding: 2px 0; font-size: 7pt; }'
+    + '.gen-q { flex: 1; }'
+    + '.gen-opts { white-space: nowrap; margin-left: 8px; }'
+    + '.comments-box { min-height: 55px; }'
+    + '.page-num { text-align: right; font-size: 6.5pt; color: #888; margin-top: 8px; }'
+    + '.edu-block { padding-bottom: 4px; margin-bottom: 4px; border-bottom: 0.3px solid #eee; page-break-inside: avoid; }'
+    + '.edu-block:last-child { border-bottom: none; margin-bottom: 0; }'
+    + '</style></head><body>'
 
-  /* Prevent orphaned section headers */
-  .section-hdr {
-    page-break-after: avoid;
-    break-after: avoid;
-  }
-  .section-body-wrap {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+    // ── PAGE 1 ──
+    + '<div class="co-header">'
+    + '<div class="photo-box">attach<br>photo<br>here</div>'
+    + '<div class="co-name">PREMIER HYTEMP PTE LTD</div>'
+    + '<div class="co-sub">NO.14 GUL DRIVE, SINGAPORE 629465</div>'
+    + '<div class="co-sub">TEL: (65) 6897-7628 / FAX: (65) 6897-7627</div>'
+    + '</div>'
+    + '<div class="form-title">APPLICATION FOR EMPLOYMENT</div>'
+    + '<div class="pos-bar"><span style="font-size:8.5pt;font-weight:700;">Position Applied for :</span> <span style="font-size:9pt;font-weight:700;">' + get('position') + '</span></div>'
 
-  /* Section header */
-  .sec-hdr {
-    background: #FFD966;
-    border: 1px solid #bbb;
-    padding: 3px 6px;
-    font-size: 8pt;
-    font-weight: 700;
-    margin-top: 8px;
-    page-break-after: avoid;
-  }
-  .sec-body {
-    border: 1px solid #bbb;
-    border-top: none;
-    padding: 5px 7px;
-    font-size: 7.5pt;
-  }
+    + secHdr('1) Personal Particulars &nbsp;&nbsp;(Please &#10003; )')
+    + secBody(
+        frow([{label:'Name (in NRIC / Passport) :', value: get('name'), flex:2}])
+        + '<div class="frow">'
+          + '<div class="fgroup" style="flex:1.4;"><span class="flbl">FIN No. (if foreigner) :</span><span class="fval">' + get('fin') + '</span></div>'
+          + '<div style="display:flex;align-items:baseline;gap:4px;flex-shrink:0;">'
+            + '<span class="flbl">Date of Birth :</span>'
+            + '<span class="fval" style="min-width:18px;text-align:center;">' + dobD + '</span><span class="flbl">(D)</span>'
+            + '<span class="fval" style="min-width:18px;text-align:center;">' + dobM + '</span><span class="flbl">(M)</span>'
+            + '<span class="fval" style="min-width:26px;text-align:center;">' + dobY + '</span><span class="flbl">(Y)</span>'
+          + '</div>'
+          + '<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0;"><span class="flbl">Age :</span><span class="fval" style="min-width:24px;">' + get('age') + '</span></div>'
+        + '</div>'
+        + frow([{label:'Country of Birth :', value:get('country_birth')},{label:'Nationality :', value:get('nationality')}])
+        + frow([{label:'Marital Status :', value:get('marital')},{label:'Race :', value:get('race')}])
+        + '<div class="frow">'
+          + '<div class="fgroup"><span class="flbl">Gender :</span>'
+            + '<span class="radio-opt">' + sel(getRadio('gender'),'Male') + ' Male</span>'
+            + '<span class="radio-opt">' + sel(getRadio('gender'),'Female') + ' Female</span>'
+          + '</div>'
+          + '<div class="fgroup"><span class="flbl">Religion :</span><span class="fval">' + get('religion') + '</span></div>'
+        + '</div>'
+      )
 
-  /* Field rows */
-  .frow {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 3px;
-    align-items: baseline;
-    flex-wrap: nowrap;
-  }
-  .fgroup {
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-    flex: 1;
-    min-width: 0;
-  }
-  .flbl {
-    color: #444;
-    white-space: nowrap;
-    font-size: 7pt;
-    flex-shrink: 0;
-  }
-  .fval {
-    flex: 1;
-    border-bottom: 0.5px solid #777;
-    font-size: 7.5pt;
-    padding: 0 2px 2px 2px;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-  }
+    + secHdr('2) Contact Information')
+    + secBody(
+        frow([{label:'Address :', value:get('address'), flex:2}])
+        + frow([{label:'Telephone (Home) :', value:get('tel_home')},{label:'Telephone (Mobile) :', value:get('tel_mobile')}])
+        + frow([{label:'Telephone (Office) :', value:get('tel_office')},{label:'E-Mail :', value:get('email')}])
+      )
 
-  /* Radio/circle indicators */
-  .radio-opt { margin-right: 6px; font-size: 7pt; }
+    + secHdr('3) Family Particulars')
+    + secBody(
+        '<table><thead><tr>'
+        + '<th style="width:26%;">Name</th><th style="width:18%;">Relationship</th>'
+        + '<th style="width:9%;">Age</th><th style="width:22%;">Occupation</th><th>Company</th>'
+        + '</tr></thead><tbody>' + familyTbody + '</tbody></table>'
+      )
 
-  /* Company header */
-  .co-header { text-align: center; margin-bottom: 8px; position: relative; }
-  .co-name { font-size: 12pt; font-weight: 700; letter-spacing: 1px; }
-  .co-sub { font-size: 7.5pt; margin-top: 2px; }
-  .photo-box {
-    position: absolute; right: 0; top: 0;
-    width: 55px; height: 68px;
-    border: 0.5px solid #bbb;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 6pt; color: #aaa; text-align: center;
-  }
+    + secHdr('4) Educational Background &#8212; Please attach copies of certificates and transcripts.')
+    + secBody(eduHTML)
 
-  /* Form title */
-  .form-title {
-    text-align: center;
-    font-size: 10pt;
-    font-weight: 700;
-    text-decoration: underline;
-    letter-spacing: 2px;
-    margin: 6px 0;
-  }
+    + '<div class="page-num">Page 1 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>'
+    + '<div class="page-break"></div>'
 
-  /* Position bar */
-  .pos-bar {
-    border: 0.5px solid #bbb;
-    padding: 3px 7px;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
+    // ── PAGE 2 ──
+    + secHdr('5) Special / Technical Skills (Please list the skills you have, type of program used or speed)')
+    + secBody('<div style="min-height:26px;font-size:7.5pt;">' + get('skills') + '</div>')
 
-  /* Family table */
-  table { border-collapse: collapse; width: 100%; font-size: 7pt; }
-  th { font-weight: 700; text-decoration: underline; text-align: left; padding: 1px 2px; font-size: 7pt; }
-  td { padding: 1px 2px; border-bottom: 0.3px solid #eee; font-size: 7pt; }
+    + secHdr('6) Employment History')
+    + secBody(empHTML)
 
-  /* Emp block */
-  .emp-block {
-    border: 0.5px solid #ddd;
-    border-left: 2.5px solid #1A3A5C;
-    padding: 4px 6px;
-    margin-bottom: 5px;
-    page-break-inside: avoid;
-  }
-  .emp-title { font-size: 6.5pt; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 3px; }
-  .emp-duties { margin-top: 2px; font-size: 7pt; }
+    + secHdr('7) Availability')
+    + secBody(
+        frow([{label:'Notice Period :', value:get('notice_period')},{label:'Earliest Start Date :', value:get('start_date')}])
+        + '<div class="frow"><div class="fgroup" style="flex:0.6;"><span class="flbl">Expected Salary (S$) :</span><span class="fval">' + get('expected_salary') + '</span></div></div>'
+      )
 
-  /* Language rows */
-  .lang-row { display: flex; gap: 8px; align-items: flex-start; border-bottom: 0.3px solid #eee; padding: 2px 0; }
-  .lang-name { font-weight: 700; min-width: 55px; font-size: 7.5pt; }
-  .lang-skills { font-size: 7pt; color: #333; }
+    + '<div class="page-num">Page 2 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>'
+    + '<div class="page-break"></div>'
 
-  /* Declaration */
-  .decl-text { font-size: 7pt; line-height: 1.5; text-align: justify; margin-bottom: 12px; }
+    // ── PAGE 3 ──
+    + secHdr('8) Other Information')
+    + secBody(
+        '<div style="font-weight:700;margin-bottom:4px;font-size:7.5pt;">a. Language proficiency. (Please &#10003; )</div>'
+        + langHTML
+        + '<div class="frow" style="margin-top:6px;">'
+          + '<span class="flbl">b. Driving License :</span>'
+          + '<span class="radio-opt">' + sel(getRadio('driving'),'Yes') + ' Yes</span>'
+          + '<span class="radio-opt">' + sel(getRadio('driving'),'No') + ' No</span>'
+          + '<span class="flbl" style="margin-left:6px;">(if YES, state class :</span>'
+          + '<span class="fval" style="max-width:50px;">' + get('driving_class') + '</span>'
+          + '<span class="flbl">)</span>'
+        + '</div>'
+      )
 
-  /* Sig row */
-  .sig-row { display: flex; gap: 20px; margin-top: 8px; align-items: flex-end; }
-  .sig-block { flex: 1; }
-  .sig-line { border-top: 0.5px solid #555; padding-top: 2px; font-size: 6.5pt; text-align: center; color: #444; margin-top: 4px; }
-  .sig-img { max-width: 140px; max-height: 44px; display: block; margin-bottom: 2px; }
-  .sig-date { flex: 1; display: flex; align-items: baseline; gap: 3px; }
-  .sig-date .flbl { font-size: 7pt; }
-  .sig-date .fval { flex: 1; }
+    + secHdr('9) General &nbsp;&nbsp;(Please &#10003; )')
+    + secBody(
+        '<div class="gen-row"><span class="gen-q">a. Have you ever been charged / convicted in a court of law in any country?</span>'
+          + '<span class="gen-opts"><span class="radio-opt">' + sel(getRadio('convicted'),'Yes') + ' Yes</span><span class="radio-opt">' + sel(getRadio('convicted'),'No') + ' No</span></span></div>'
+        + '<div class="gen-row"><span class="gen-q">b. Have you ever been dismissed / suspended / requested to resign from any previous jobs?</span>'
+          + '<span class="gen-opts"><span class="radio-opt">' + sel(getRadio('dismissed'),'Yes') + ' Yes</span><span class="radio-opt">' + sel(getRadio('dismissed'),'No') + ' No</span></span></div>'
+        + '<div class="gen-row"><span class="gen-q">c. Do you have any form of drug addiction?</span>'
+          + '<span class="gen-opts"><span class="radio-opt">' + sel(getRadio('drugs'),'Yes') + ' Yes</span><span class="radio-opt">' + sel(getRadio('drugs'),'No') + ' No</span></span></div>'
+        + '<div class="gen-row" style="border-bottom:none;"><span class="gen-q">d. Do you smoke?</span>'
+          + '<span class="gen-opts"><span class="radio-opt">' + sel(getRadio('smoke'),'Yes') + ' Yes</span><span class="radio-opt">' + sel(getRadio('smoke'),'No') + ' No</span></span></div>'
+        + genDetails
+      )
 
-  /* General section */
-  .gen-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 0.3px solid #eee; padding: 2px 0; font-size: 7pt; }
-  .gen-q { flex: 1; }
-  .gen-opts { white-space: nowrap; margin-left: 8px; }
+    + secHdr('10) Declaration')
+    + secBody(
+        '<p class="decl-text">I declare that the above information and documents attached hereto are true and to the best of my knowledge and belief, and I have not wilfully suppressed any materials. I understand that any false answers or statements made by me on this application or any supplement thereto will be sufficient cause for my dismissal from the company\'s service without any notice or monies in lieu.</p>'
+        + '<div class="sig-row">'
+          + '<div class="sig-block">' + appSigHTML + '<div class="sig-line">Signature of Applicant</div></div>'
+          + '<div class="sig-date"><span class="flbl">Date (DD/MM/YYYY) :</span><span class="fval">' + get('applicant_date') + '</span></div>'
+        + '</div>'
+      )
 
-  /* Comments box */
-  .comments-box { min-height: 55px; }
+    + secHdr('Comments by Interviewer')
+    + secBody(
+        '<div class="comments-box"></div>'
+        + '<div class="sig-row">'
+          + '<div class="sig-block">' + intSigHTML + '<div class="sig-line">Signature of Interviewer</div></div>'
+          + '<div class="sig-date"><span class="flbl">Date (DD/MM/YYYY) :</span><span class="fval">' + get('interviewer_date') + '</span></div>'
+        + '</div>'
+      )
 
-  /* Page number */
-  .page-num { text-align: right; font-size: 6.5pt; color: #888; margin-top: 8px; }
+    + '<div class="page-num">Page 3 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>'
+    + '</body></html>';
 
-  /* Edu block */
-  .edu-block { padding-bottom: 4px; margin-bottom: 4px; border-bottom: 0.3px solid #eee; page-break-inside: avoid; }
-  .edu-block:last-child { border-bottom: none; margin-bottom: 0; }
-</style>
-</head>
-<body>
-
-<!-- Company Header -->
-<div class="co-header">
-  <div class="photo-box">attach<br>photo<br>here</div>
-  <div class="co-name">PREMIER HYTEMP PTE LTD</div>
-  <div class="co-sub">NO.14 GUL DRIVE, SINGAPORE 629465</div>
-  <div class="co-sub">TEL: (65) 6897-7628 / FAX: (65) 6897-7627</div>
-</div>
-
-<div class="form-title">APPLICATION FOR EMPLOYMENT</div>
-
-<div class="pos-bar">
-  <span style="font-size:8.5pt;font-weight:700;">Position Applied for :</span>
-  <span style="font-size:9pt;font-weight:700;">${get('position')}</span>
-</div>
-
-<!-- ══════════ PAGE 1 ══════════ -->
-
-<!-- Section 1 -->
-<div class="sec-hdr">1) Personal Particulars &nbsp;&nbsp;(Please ✓ )</div>
-<div class="sec-body">
-  <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Name (in NRIC / Passport) :</span><span class="fval">${get('name')}</span></div></div>
-  <div class="frow">
-    <div class="fgroup" style="flex:1.4;"><span class="flbl">FIN No. (if foreigner) :</span><span class="fval">${get('fin')}</span></div>
-    <div style="display:flex;align-items:baseline;gap:4px;flex-shrink:0;">
-      <span class="flbl">Date of Birth :</span>
-      <span class="fval" style="min-width:18px;text-align:center;">${get('dob_d')}</span><span class="flbl">(D)</span>
-      <span class="fval" style="min-width:18px;text-align:center;">${get('dob_m')}</span><span class="flbl">(M)</span>
-      <span class="fval" style="min-width:26px;text-align:center;">${get('dob_y')}</span><span class="flbl">(Y)</span>
-    </div>
-    <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0;">
-      <span class="flbl">Age :</span><span class="fval" style="min-width:24px;">${get('age')}</span>
-    </div>
-  </div>
-  <div class="frow">
-    <div class="fgroup"><span class="flbl">Country of Birth :</span><span class="fval">${get('country_birth')}</span></div>
-    <div class="fgroup"><span class="flbl">Nationality :</span><span class="fval">${get('nationality')}</span></div>
-  </div>
-  <div class="frow">
-    <div class="fgroup"><span class="flbl">Marital Status :</span><span class="fval">${get('marital')}</span></div>
-    <div class="fgroup"><span class="flbl">Race :</span><span class="fval">${get('race')}</span></div>
-  </div>
-  <div class="frow">
-    <div class="fgroup">
-      <span class="flbl">Gender :</span>
-      <span class="radio-opt">${getRadio('gender')==='Male'?'●':'○'} Male</span>
-      <span class="radio-opt">${getRadio('gender')==='Female'?'●':'○'} Female</span>
-    </div>
-    <div class="fgroup"><span class="flbl">Religion :</span><span class="fval">${get('religion')}</span></div>
-  </div>
-</div>
-
-<!-- Section 2 -->
-<div class="sec-hdr">2) Contact Information</div>
-<div class="sec-body">
-  <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Address :</span><span class="fval">${get('address')}</span></div></div>
-  <div class="frow">
-    <div class="fgroup"><span class="flbl">Telephone (Home) :</span><span class="fval">${get('tel_home')}</span></div>
-    <div class="fgroup"><span class="flbl">Telephone (Mobile) :</span><span class="fval">${get('tel_mobile')}</span></div>
-  </div>
-  <div class="frow">
-    <div class="fgroup"><span class="flbl">Telephone (Office) :</span><span class="fval">${get('tel_office')}</span></div>
-    <div class="fgroup"><span class="flbl">E-Mail :</span><span class="fval">${get('email')}</span></div>
-  </div>
-</div>
-
-<!-- Section 3 -->
-<div class="sec-hdr">3) Family Particulars</div>
-<div class="sec-body">
-  <table>
-    <thead><tr>
-      <th style="width:26%;">Name</th>
-      <th style="width:18%;">Relationship</th>
-      <th style="width:9%;">Age</th>
-      <th style="width:22%;">Occupation</th>
-      <th>Company</th>
-    </tr></thead>
-    <tbody>
-      ${familyRows.map(row=>`<tr>${row.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
-      ${Array(Math.max(0,5-familyRows.length)).fill(`<tr><td style="padding:4px 2px;">&nbsp;</td><td></td><td></td><td></td><td></td></tr>`).join('')}
-    </tbody>
-  </table>
-</div>
-
-<!-- Section 4 -->
-<div class="sec-hdr">4) Educational Background — Please attach copies of certificates and transcripts.</div>
-<div class="sec-body">
-  ${eduBlocks.map(([inst,qual,from,to])=>`
-  <div class="edu-block">
-    <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Educational Institution:</span><span class="fval">${inst}</span></div></div>
-    <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Qualification :</span><span class="fval">${qual}</span></div></div>
-    <div class="frow">
-      <div class="fgroup"><span class="flbl">From Year :</span><span class="fval" style="max-width:40px;">${from}</span></div>
-      <div class="fgroup"><span class="flbl">To Year :</span><span class="fval" style="max-width:40px;">${to}</span></div>
-    </div>
-  </div>`).join('')}
-</div>
-
-<!-- PAGE 1 FOOTER + BREAK -->
-<div class="page-num">Page 1 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
-<div class="page-break"></div>
-
-<!-- ══════════ PAGE 2 ══════════ -->
-
-<!-- Section 5 -->
-<div class="sec-hdr">5) Special / Technical Skills (Please list the skills you have, type of program used or speed)</div>
-<div class="sec-body"><div style="min-height:26px;font-size:7.5pt;">${get('skills')}</div></div>
-
-<!-- Section 6 -->
-<div class="sec-hdr">6) Employment History</div>
-<div class="sec-body">
-  ${empBlocks.map(emp=>`
-  <div class="emp-block">
-    <div class="emp-title">${emp.title}</div>
-    <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Company Name :</span><span class="fval">${emp.vals[0]||''}</span></div></div>
-    <div class="frow"><div class="fgroup" style="flex:2;"><span class="flbl">Address :</span><span class="fval">${emp.vals[1]||''}</span></div></div>
-    <div class="frow">
-      <div class="fgroup"><span class="flbl">Position(s) :</span><span class="fval">${emp.vals[2]||''}</span></div>
-      <div class="fgroup"><span class="flbl">Basic Salary (S$) :</span><span class="fval">${emp.vals[3]||''}</span></div>
-      <div class="fgroup"><span class="flbl">Fixed Allowance (S$) :</span><span class="fval">${emp.vals[4]||''}</span></div>
-    </div>
-    <div class="frow">
-      <div class="fgroup"><span class="flbl">Date From (MM/YYYY) :</span><span class="fval">${emp.vals[5]||''}</span></div>
-      <div class="fgroup"><span class="flbl">Date To (MM/YYYY) :</span><span class="fval">${emp.vals[6]||''}</span></div>
-    </div>
-    <div class="emp-duties"><span class="flbl">Job Duties :</span> ${emp.duties}</div>
-  </div>`).join('')}
-</div>
-
-<!-- Section 7 -->
-<div class="sec-hdr">7) Availability</div>
-<div class="sec-body">
-  <div class="frow">
-    <div class="fgroup"><span class="flbl">Notice Period :</span><span class="fval">${get('notice_period')}</span></div>
-    <div class="fgroup"><span class="flbl">Earliest Start Date :</span><span class="fval">${get('start_date')}</span></div>
-  </div>
-  <div class="frow"><div class="fgroup" style="flex:0.6;"><span class="flbl">Expected Salary (S$) :</span><span class="fval">${get('expected_salary')}</span></div></div>
-</div>
-
-<!-- PAGE 2 FOOTER + BREAK -->
-<div class="page-num">Page 2 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
-<div class="page-break"></div>
-
-<!-- ══════════ PAGE 3 ══════════ -->
-
-<!-- Section 8 -->
-<div class="sec-hdr">8) Other Information</div>
-<div class="sec-body">
-  <div style="font-weight:700;margin-bottom:4px;font-size:7.5pt;">a. Language proficiency. (Please ✓ )</div>
-  ${langRows.map(({lang,skills})=>`
-  <div class="lang-row">
-    <div class="lang-name">${lang}</div>
-    <div class="lang-skills">${skills.join(' &nbsp;|&nbsp; ')}</div>
-  </div>`).join('')}
-  <div class="frow" style="margin-top:6px;">
-    <span class="flbl">b. Driving License :</span>
-    <span class="radio-opt">${getRadio('driving')==='Yes'?'●':'○'} Yes</span>
-    <span class="radio-opt">${getRadio('driving')==='No'?'●':'○'} No</span>
-    <span class="flbl" style="margin-left:6px;">(if YES, state class :</span>
-    <span class="fval" style="max-width:50px;">${get('driving_class')}</span>
-    <span class="flbl">)</span>
-  </div>
-</div>
-
-<!-- Section 9 -->
-<div class="sec-hdr">9) General &nbsp;&nbsp;(Please ✓ )</div>
-<div class="sec-body">
-  <div class="gen-row">
-    <span class="gen-q">a. Have you ever been charged / convicted in a court of law in any country?</span>
-    <span class="gen-opts"><span class="radio-opt">${getRadio('convicted')==='Yes'?'●':'○'} Yes</span><span class="radio-opt">${getRadio('convicted')==='No'?'●':'○'} No</span></span>
-  </div>
-  <div class="gen-row">
-    <span class="gen-q">b. Have you ever been dismissed / suspended / requested to resign from any previous jobs?</span>
-    <span class="gen-opts"><span class="radio-opt">${getRadio('dismissed')==='Yes'?'●':'○'} Yes</span><span class="radio-opt">${getRadio('dismissed')==='No'?'●':'○'} No</span></span>
-  </div>
-  <div class="gen-row">
-    <span class="gen-q">c. Do you have any form of drug addiction?</span>
-    <span class="gen-opts"><span class="radio-opt">${getRadio('drugs')==='Yes'?'●':'○'} Yes</span><span class="radio-opt">${getRadio('drugs')==='No'?'●':'○'} No</span></span>
-  </div>
-  <div class="gen-row" style="border-bottom:none;">
-    <span class="gen-q">d. Do you smoke?</span>
-    <span class="gen-opts"><span class="radio-opt">${getRadio('smoke')==='Yes'?'●':'○'} Yes</span><span class="radio-opt">${getRadio('smoke')==='No'?'●':'○'} No</span></span>
-  </div>
-  ${get('general_details')?`<div style="margin-top:4px;font-size:7pt;color:#444;">Details: ${get('general_details')}</div>`:''}
-</div>
-
-<!-- Section 10 -->
-<div class="sec-hdr">10) Declaration</div>
-<div class="sec-body">
-  <p class="decl-text">I declare that the above information and documents attached hereto are true and to the best of my knowledge and belief, and I have not wilfully suppressed any materials. I understand that any false answers or statements made by me on this application or any supplement thereto will be sufficient cause for my dismissal from the company\'s service without any notice or monies in lieu.</p>
-  <div class="sig-row">
-    <div class="sig-block">
-      ${appSigDataURL?`<img src="${appSigDataURL}" class="sig-img">`:'<div style="height:44px;"></div>'}
-      <div class="sig-line">Signature of Applicant</div>
-    </div>
-    <div class="sig-date">
-      <span class="flbl">Date (DD/MM/YYYY) :</span>
-      <span class="fval">${get('applicant_date')}</span>
-    </div>
-  </div>
-</div>
-
-<!-- Comments by Interviewer -->
-<div class="sec-hdr">Comments by Interviewer</div>
-<div class="sec-body">
-  <div class="comments-box"></div>
-  <div class="sig-row">
-    <div class="sig-block">
-      ${intSigDataURL?`<img src="${intSigDataURL}" class="sig-img">`:'<div style="height:44px;"></div>'}
-      <div class="sig-line">Signature of Interviewer</div>
-    </div>
-    <div class="sig-date">
-      <span class="flbl">Date (DD/MM/YYYY) :</span>
-      <span class="fval">${get('interviewer_date')}</span>
-    </div>
-  </div>
-</div>
-
-<div class="page-num">Page 3 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
-
-</body>
-</html>`;
-
-  // Open print window
-  const printWin = window.open('', '_blank', 'width=900,height=700');
+  var printWin = window.open('', '_blank', 'width=900,height=700');
   printWin.document.write(html);
   printWin.document.close();
   printWin.focus();
-  setTimeout(() => {
-    printWin.print();
-  }, 800);
+  setTimeout(function() { printWin.print(); }, 800);
 }
 </script>
 </body>
