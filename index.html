@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premier Hytemp - Application for Employment</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #e8e8e8;
+    min-height: 100vh;
+    padding: 20px;
+    color: #000;
+  }
+
+  .app-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .top-bar {
+    background: #1a3a5c;
+    color: white;
+    padding: 14px 20px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+  }
+
+  .top-bar h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-download {
+    background: #e8a020;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-download:hover { background: #c8871a; }
+  .btn-download:disabled { background: #aaa; cursor: not-allowed; }
+
+  .btn-submit {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: #27ae60; }
+  .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* Success overlay */
+  #success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  #success-overlay.visible { display: flex; }
+  .success-card {
+    background: white;
+    border-radius: 10px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .success-icon { font-size: 52px; margin-bottom: 16px; }
+  .success-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #1a3a5c; }
+  .success-card p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 20px; }
+  .success-card .btn-close {
+    background: #1a3a5c;
+    color: white;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .success-card .btn-close:hover { background: #122840; }
+
+  /* ===== FORM PAPER ===== */
+  #form-paper {
+    background: white;
+    padding: 30px 36px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .company-header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .company-header .name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .company-header .address {
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .photo-box {
+    position: absolute;
+    right: 36px;
+    top: 30px;
+    width: 90px;
+    height: 110px;
+    border: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    background: #fafafa;
+  }
+  .photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .form-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: underline;
+    letter-spacing: 2px;
+    margin: 8px 0 20px;
+  }
+
+  /* Section headers */
+  .section-header {
+    background: #ffd966;
+    border: 1px solid #bbb;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 14px;
+    margin-bottom: 0;
+    color: #000;
+  }
+
+  .section-body {
+    border: 1px solid #bbb;
+    border-top: none;
+    padding: 8px 10px;
+  }
+
+  /* Generic form row */
+  .form-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .form-row:last-child { margin-bottom: 0; }
+
+  .field-group {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  label.fl {
+    font-size: 11px;
+    white-space: nowrap;
+    color: #333;
+    flex-shrink: 0;
+  }
+
+  input.fi, select.fi, textarea.fi {
+    border: none;
+    border-bottom: 1px solid #555;
+    outline: none;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    padding: 1px 3px;
+    flex: 1;
+    min-width: 60px;
+    background: transparent;
+    color: #000;
+  }
+  input.fi:focus, select.fi:focus, textarea.fi:focus {
+    border-bottom-color: #1a3a5c;
+    background: #f0f7ff;
+  }
+  select.fi { cursor: pointer; }
+  textarea.fi { resize: vertical; min-height: 28px; border: 1px solid #bbb; border-radius: 2px; padding: 3px 4px; }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+  }
+  .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-group input[type="checkbox"] { cursor: pointer; }
+  .checkbox-group input[type="radio"] { cursor: pointer; }
+
+  /* DOB row */
+  .dob-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex: 1;
+  }
+  .dob-row input { width: 44px; text-align: center; }
+  .dob-label { font-size: 10px; color: #555; }
+
+  /* Position header row */
+  .position-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border: 1px solid #bbb;
+    padding: 6px 10px;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  .position-row label { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .position-row input { font-size: 12px; font-weight: 600; }
+
+  /* Family table */
+  table.family-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  table.family-table th {
+    border-bottom: 1px solid #777;
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 2px 4px;
+    text-decoration: underline;
+  }
+  table.family-table td {
+    border-bottom: 1px solid #ddd;
+    padding: 1px 2px;
+  }
+  table.family-table input.fi {
+    width: 100%;
+    min-width: 30px;
+  }
+
+  /* Education rows */
+  .edu-block {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+  .edu-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  /* Employment block */
+  .emp-block {
+    border: 1px solid #ddd;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 2px;
+    background: #fafafa;
+  }
+  .emp-block:last-child { margin-bottom: 0; }
+  .emp-block-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: #555;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Page break label */
+  .page-break-marker {
+    text-align: center;
+    font-size: 9px;
+    color: #aaa;
+    border-top: 1px dashed #ddd;
+    margin: 20px 0 16px;
+    padding-top: 6px;
+  }
+
+  /* Skills textarea */
+  .skills-area {
+    width: 100%;
+    font-size: 11px;
+    border: 1px solid #bbb;
+    border-radius: 2px;
+    padding: 6px;
+    resize: vertical;
+    min-height: 50px;
+    font-family: Arial, sans-serif;
+    background: transparent;
+    color: #000;
+  }
+  .skills-area:focus { outline: 2px solid #1a3a5c; }
+
+  /* Availability row */
+  .avail-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* Language table */
+  .lang-table { width: 100%; margin-top: 4px; font-size: 11px; }
+  .lang-table td { padding: 3px 4px; }
+  .lang-table input[type="radio"] { margin-right: 2px; }
+  .lang-radio-group { display: flex; gap: 10px; align-items: center; }
+  .lang-radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; }
+
+  /* General section */
+  .general-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    padding: 5px 0;
+    font-size: 11px;
+    gap: 8px;
+  }
+  .general-row:last-child { border-bottom: none; }
+  .general-row .q { flex: 1; }
+  .yesno-group { display: flex; gap: 10px; flex-shrink: 0; }
+  .yesno-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+
+  /* Declaration */
+  .declaration-text {
+    font-size: 10.5px;
+    line-height: 1.55;
+    margin-bottom: 16px;
+    text-align: justify;
+  }
+
+  .sig-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    gap: 40px;
+  }
+  .sig-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sig-line {
+    border-bottom: 1px solid #555;
+    min-height: 30px;
+    width: 100%;
+  }
+  .sig-label { font-size: 11px; text-align: center; color: #333; }
+
+  /* Comments */
+  .comments-area {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid #bbb;
+    border-radius: 2px;
+    padding: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    resize: vertical;
+    background: transparent;
+    color: #000;
+    margin-top: 6px;
+  }
+  .comments-area:focus { outline: 2px solid #1a3a5c; }
+
+  .page-num {
+    text-align: right;
+    font-size: 9px;
+    color: #888;
+    margin-top: 16px;
+  }
+
+  /* Add row button */
+  .add-row-btn {
+    background: none;
+    border: 1px dashed #1a3a5c;
+    color: #1a3a5c;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .add-row-btn:hover { background: #eef4ff; }
+
+  .status-msg {
+    font-size: 12px;
+    color: #28a745;
+    margin-left: 12px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .top-bar { display: none; }
+    #form-paper { box-shadow: none; border: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <div class="top-bar">
+    <h1>Premier Hytemp Pte Ltd — Application for Employment (Digital)</h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="status-msg" id="save-status"></span>
+      <button class="btn-download" id="btn-pdf" onclick="generatePDF()">
+        &#8595; Download PDF
+      </button>
+      <button class="btn-submit" id="btn-submit" onclick="submitForm()">
+        &#10003; Submit Application
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Overlay -->
+  <div id="success-overlay">
+    <div class="success-card">
+      <div class="success-icon">✅</div>
+      <h2>Application Submitted!</h2>
+      <p>Your application has been sent successfully.<br>The team at Premier Hytemp will be in touch shortly.</p>
+      <p style="font-size:11px;color:#888;">You may also download a PDF copy for your own records.</p>
+      <button class="btn-close" onclick="document.getElementById('success-overlay').classList.remove('visible')">Close</button>
+    </div>
+  </div>
+  </div>
+
+  <div id="form-paper">
+
+    <!-- Company Header -->
+    <div style="position:relative; min-height:120px;">
+      <div class="company-header">
+        <div class="name">PREMIER HYTEMP PTE LTD</div>
+        <div class="address">NO.14 GUL DRIVE, SINGAPORE 629465<br>TEL: (65) 6897-7628 / FAX: (65) 6897-7627</div>
+      </div>
+      <div class="photo-box" id="photo-box" onclick="document.getElementById('photo-upload').click()">
+        <img id="photo-preview" src="" alt="" style="display:none;">
+        <span id="photo-text">attach photo here</span>
+      </div>
+      <input type="file" id="photo-upload" accept="image/*" style="display:none" onchange="loadPhoto(event)">
+    </div>
+
+    <!-- Title -->
+    <div class="form-title">APPLICATION FOR EMPLOYMENT</div>
+
+    <!-- Position -->
+    <div class="position-row">
+      <label class="fl" style="font-size:12px;font-weight:700;">Position Applied for :</label>
+      <input class="fi" id="position" type="text" value="CNC Machinist" style="font-size:12px;font-weight:600;flex:1;">
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section-header">1) Personal Particulars &nbsp;&nbsp;(Please ✓)</div>
+    <div class="section-body">
+      <div class="form-row">
+        <div class="field-group" style="flex:2;">
+          <label class="fl">Name (in NRIC / Passport) :</label>
+          <input class="fi" id="name" type="text" style="flex:1;">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group" style="flex:1.2;">
+          <label class="fl">FIN No. (if foreigner) :</label>
+          <input class="fi" id="fin" type="text">
+        </div>
+        <div class="field-group" style="gap:6px;">
+          <label class="fl">Date of Birth (at least aged 18) :</label>
+          <div class="dob-row">
+            <input class="fi" id="dob_d" type="text" placeholder="DD" maxlength="2">
+            <span class="dob-label">(D)</span>
+            <input class="fi" id="dob_m" type="text" placeholder="MM" maxlength="2">
+            <span class="dob-label">(M)</span>
+            <input class="fi" id="dob_y" type="text" placeholder="YYYY" maxlength="4" style="width:52px;">
+            <span class="dob-label">(Y)</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label class="fl">Country of Birth :</label>
+          <input class="fi" id="country_birth" type="text">
+        </div>
+        <div class="field-group">
+          <label class="fl">Nationality :</label>
+          <input class="fi" id="nationality" type="text">
+        </div>
+        <div class="field-group" style="flex:0.4;">
+          <label class="fl">Age :</label>
+          <input class="fi" id="age" type="text" style="width:40px;">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label class="fl">Marital Status :</label>
+          <input class="fi" id="marital" type="text">
+        </div>
+        <div class="field-group">
+          <label class="fl">Race :</label>
+          <input class="fi" id="race" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label class="fl">Gender :</label>
+          <div class="checkbox-group">
+            <label><input type="radio" name="gender" value="Male" id="g_male"> Male</label>
+            <label><input type="radio" name="gender" value="Female" id="g_female"> Female</label>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="fl">Religion :</label>
+          <input class="fi" id="religion" type="text">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="section-header">2) Contact Information</div>
+    <div class="section-body">
+      <div class="form-row">
+        <label class="fl">Address :</label>
+        <input class="fi" id="address" type="text" style="flex:1;">
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label class="fl">Telephone (Home) :</label>
+          <input class="fi" id="tel_home" type="text">
+        </div>
+        <div class="field-group">
+          <label class="fl">Telephone (Mobile) :</label>
+          <input class="fi" id="tel_mobile" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label class="fl">Telephone (Office) :</label>
+          <input class="fi" id="tel_office" type="text">
+        </div>
+        <div class="field-group">
+          <label class="fl">E-Mail :</label>
+          <input class="fi" id="email" type="email">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="section-header">3) Family Particulars</div>
+    <div class="section-body">
+      <table class="family-table" id="family-table">
+        <thead>
+          <tr>
+            <th style="width:28%;">Name</th>
+            <th style="width:18%;">Relationship</th>
+            <th style="width:10%;">Age</th>
+            <th style="width:20%;">Occupation</th>
+            <th style="width:24%;">Company</th>
+          </tr>
+        </thead>
+        <tbody id="family-tbody">
+          <!-- rows added by JS -->
+        </tbody>
+      </table>
+      <button class="add-row-btn" onclick="addFamilyRow()">+ Add member</button>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="section-header">4) Educational Background - Please attach copies of certificates and transcripts.</div>
+    <div class="section-body" id="edu-section">
+      <!-- rows added by JS -->
+    </div>
+    <div style="padding:4px 10px 8px; border:1px solid #bbb; border-top:none;">
+      <button class="add-row-btn" onclick="addEduBlock()">+ Add education</button>
+    </div>
+
+    <!-- Page 1 marker -->
+    <div class="page-break-marker">— Page 1 of 3 &nbsp;|&nbsp; BSF-023-06 —</div>
+
+    <!-- Section 5 -->
+    <div class="section-header">5) Special / Technical Skills (Please list the skills you have, type of program used or speed)</div>
+    <div class="section-body">
+      <textarea class="skills-area" id="skills" placeholder="e.g. CNC Machining (Fanuc, Mazak), CAD/CAM (Mastercam), Milling, Turning, Quality inspection (CMM)..."></textarea>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="section-header">6) Employment History</div>
+    <div class="section-body" id="emp-section">
+      <!-- blocks added by JS -->
+    </div>
+    <div style="padding:4px 10px 8px; border:1px solid #bbb; border-top:none;">
+      <button class="add-row-btn" onclick="addEmpBlock()">+ Add employer</button>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="section-header">7) Availability</div>
+    <div class="section-body">
+      <div class="avail-row">
+        <div class="field-group">
+          <label class="fl">Notice Period :</label>
+          <input class="fi" id="notice_period" type="text" placeholder="e.g. 1 month">
+        </div>
+        <div class="field-group">
+          <label class="fl">Earliest Start Date :</label>
+          <input class="fi" id="start_date" type="text" placeholder="DD/MM/YYYY">
+        </div>
+      </div>
+      <div class="avail-row">
+        <div class="field-group">
+          <label class="fl">Expected Salary (S$) :</label>
+          <input class="fi" id="expected_salary" type="text">
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 2 marker -->
+    <div class="page-break-marker">— Page 2 of 3 &nbsp;|&nbsp; BSF-023-06 —</div>
+
+    <!-- Section 8 -->
+    <div class="section-header">8) Other Information</div>
+    <div class="section-body">
+      <div style="font-size:11px; font-weight:600; margin-bottom:6px;">a. Language proficiency. (Please ✓)</div>
+      <table class="lang-table">
+        <tbody id="lang-tbody">
+          <!-- rows added by JS -->
+        </tbody>
+      </table>
+      <button class="add-row-btn" style="margin-top:6px;" onclick="addLangRow()">+ Add language</button>
+
+      <div class="form-row" style="margin-top:12px;">
+        <div class="field-group" style="gap:10px;">
+          <label class="fl">b. Driving License :</label>
+          <div class="yesno-group">
+            <label><input type="radio" name="driving" value="Yes" id="driv_yes"> Yes</label>
+            <label><input type="radio" name="driving" value="No" id="driv_no"> No</label>
+          </div>
+          <label class="fl">(if YES, state class :</label>
+          <input class="fi" id="driving_class" type="text" style="width:60px;">
+          <span class="fl">)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="section-header">9) General &nbsp;&nbsp;(Please ✓)</div>
+    <div class="section-body">
+      <div class="general-row">
+        <span class="q">a. Have you ever been charged / convicted in a court of law in any country?</span>
+        <div class="yesno-group">
+          <label><input type="radio" name="convicted" value="Yes"> Yes</label>
+          <label><input type="radio" name="convicted" value="No"> No</label>
+        </div>
+      </div>
+      <div class="general-row">
+        <span class="q">b. Have you ever been dismissed / suspended / requested to resign from any of your current / previous jobs?</span>
+        <div class="yesno-group">
+          <label><input type="radio" name="dismissed" value="Yes"> Yes</label>
+          <label><input type="radio" name="dismissed" value="No"> No</label>
+        </div>
+      </div>
+      <div class="general-row">
+        <span class="q">c. Do you have any form of drug addiction?</span>
+        <div class="yesno-group">
+          <label><input type="radio" name="drugs" value="Yes"> Yes</label>
+          <label><input type="radio" name="drugs" value="No"> No</label>
+        </div>
+      </div>
+      <div class="general-row">
+        <span class="q">d. Do you smoke?</span>
+        <div class="yesno-group">
+          <label><input type="radio" name="smoke" value="Yes"> Yes</label>
+          <label><input type="radio" name="smoke" value="No"> No</label>
+        </div>
+      </div>
+      <div style="font-size:11px; margin-top:6px; color:#555; font-style:italic;">If you have answered "YES" to any of the above questions, please provide detail below :</div>
+      <textarea class="fi" id="general_details" style="width:100%;border:1px solid #bbb;border-radius:2px;padding:4px;min-height:40px;margin-top:4px;resize:vertical;font-family:Arial,sans-serif;font-size:11px;"></textarea>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="section-header">10) Declaration</div>
+    <div class="section-body">
+      <p class="declaration-text">
+        I declare that the above information and documents attached hereto are true and to the best of my knowledge and belief, and I have not wilfully suppressed any materials. I understand that any false answers or statements made by me on this application or any supplement thereto will be sufficient cause for my dismissal from the company's service without any notice or monies in lieu.
+      </p>
+      <div class="sig-row">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-label">Signature of Applicant</div>
+        </div>
+        <div class="sig-block">
+          <div style="display:flex;align-items:baseline;gap:4px;">
+            <label class="fl">Date (DD/MM/YYYY) :</label>
+            <input class="fi" id="applicant_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments by Interviewer -->
+    <div class="section-header">Comments by Interviewer</div>
+    <div class="section-body">
+      <textarea class="comments-area" id="interviewer_comments" placeholder="Interviewer notes..."></textarea>
+      <div class="sig-row">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-label">Signature of Interviewer</div>
+        </div>
+        <div class="sig-block">
+          <div style="display:flex;align-items:baseline;gap:4px;">
+            <label class="fl">Date (DD/MM/YYYY) :</label>
+            <input class="fi" id="interviewer_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-num">Page 3 of 3 &nbsp;&nbsp;&nbsp; BSF-023-06</div>
+
+  </div><!-- end form-paper -->
+</div>
+
+<script>
+// ===== FAMILY ROWS =====
+function addFamilyRow() {
+  const tbody = document.getElementById('family-tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input class="fi" type="text" style="width:100%;" placeholder="Name"></td>
+    <td><input class="fi" type="text" style="width:100%;" placeholder="e.g. Spouse"></td>
+    <td><input class="fi" type="text" style="width:100%;" placeholder="Age"></td>
+    <td><input class="fi" type="text" style="width:100%;" placeholder="Occupation"></td>
+    <td><input class="fi" type="text" style="width:100%;" placeholder="Company"></td>
+  `;
+  tbody.appendChild(tr);
+}
+// Init 5 family rows
+for (let i = 0; i < 5; i++) addFamilyRow();
+
+// ===== EDUCATION BLOCKS =====
+let eduCount = 0;
+function addEduBlock() {
+  eduCount++;
+  const section = document.getElementById('edu-section');
+  const div = document.createElement('div');
+  div.className = 'edu-block';
+  div.innerHTML = `
+    <div class="form-row">
+      <div class="field-group" style="flex:1.5;">
+        <label class="fl">Educational Institution:</label>
+        <input class="fi" type="text" style="flex:1;">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <label class="fl">Qualification :</label>
+        <input class="fi" type="text" style="flex:1;">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <label class="fl">From Year :</label>
+        <input class="fi" type="text" style="width:55px;" placeholder="YYYY">
+      </div>
+      <div class="field-group">
+        <label class="fl">To Year :</label>
+        <input class="fi" type="text" style="width:55px;" placeholder="YYYY">
+      </div>
+    </div>
+  `;
+  section.appendChild(div);
+}
+// Init 3 edu blocks
+for (let i = 0; i < 3; i++) addEduBlock();
+
+// ===== EMPLOYMENT BLOCKS =====
+let empCount = 0;
+const empLabels = ['Current / Latest Employer', '2nd Most Recent Employer', '3rd Most Recent Employer', '4th Most Recent Employer'];
+function addEmpBlock() {
+  const section = document.getElementById('emp-section');
+  const label = empLabels[empCount] || `Employer ${empCount + 1}`;
+  empCount++;
+  const div = document.createElement('div');
+  div.className = 'emp-block';
+  div.innerHTML = `
+    <div class="emp-block-title">${label}</div>
+    <div class="form-row">
+      <div class="field-group" style="flex:2;">
+        <label class="fl">Company Name :</label>
+        <input class="fi" type="text" style="flex:1;">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group" style="flex:2;">
+        <label class="fl">Address :</label>
+        <input class="fi" type="text" style="flex:1;">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <label class="fl">Position(s) :</label>
+        <input class="fi" type="text" style="flex:1;">
+      </div>
+      <div class="field-group">
+        <label class="fl">Basic Salary (S$) :</label>
+        <input class="fi" type="text" style="width:80px;">
+      </div>
+      <div class="field-group">
+        <label class="fl">Fixed Allowance (S$) :</label>
+        <input class="fi" type="text" style="width:80px;">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <label class="fl">Date From (MM/YYYY) :</label>
+        <input class="fi" type="text" placeholder="MM/YYYY" style="width:80px;">
+      </div>
+      <div class="field-group">
+        <label class="fl">Date To (MM/YYYY) :</label>
+        <input class="fi" type="text" placeholder="MM/YYYY or Present" style="width:100px;">
+      </div>
+    </div>
+    <div class="form-row" style="flex-direction:column;align-items:flex-start;gap:2px;">
+      <label class="fl">Job Duties :</label>
+      <textarea class="fi" style="width:100%;border:1px solid #bbb;border-radius:2px;padding:4px;min-height:36px;resize:vertical;margin-top:2px;" placeholder="Describe key duties and responsibilities..."></textarea>
+    </div>
+  `;
+  section.appendChild(div);
+}
+// Init 3 emp blocks
+for (let i = 0; i < 3; i++) addEmpBlock();
+
+// ===== LANGUAGE ROWS =====
+function addLangRow() {
+  const tbody = document.getElementById('lang-tbody');
+  const tr = document.createElement('tr');
+  const id = 'lang_' + Date.now();
+  tr.innerHTML = `
+    <td style="width:22%; padding:3px 4px;">
+      <input class="fi" type="text" style="width:100%;" placeholder="Language">
+    </td>
+    <td style="padding:3px 4px;">
+      <div style="font-size:10px; color:#555; margin-bottom:1px;">Spoken</div>
+      <div class="lang-radio-group">
+        <label><input type="radio" name="${id}_sp"> Basic</label>
+        <label><input type="radio" name="${id}_sp"> Average</label>
+        <label><input type="radio" name="${id}_sp"> Good</label>
+        <label><input type="radio" name="${id}_sp"> Very Good</label>
+      </div>
+    </td>
+    <td style="padding:3px 4px;">
+      <div style="font-size:10px; color:#555; margin-bottom:1px;">Read</div>
+      <div class="lang-radio-group">
+        <label><input type="radio" name="${id}_rd"> Basic</label>
+        <label><input type="radio" name="${id}_rd"> Average</label>
+        <label><input type="radio" name="${id}_rd"> Good</label>
+        <label><input type="radio" name="${id}_rd"> Very Good</label>
+      </div>
+    </td>
+    <td style="padding:3px 4px;">
+      <div style="font-size:10px; color:#555; margin-bottom:1px;">Written</div>
+      <div class="lang-radio-group">
+        <label><input type="radio" name="${id}_wr"> Basic</label>
+        <label><input type="radio" name="${id}_wr"> Average</label>
+        <label><input type="radio" name="${id}_wr"> Good</label>
+        <label><input type="radio" name="${id}_wr"> Very Good</label>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(tr);
+}
+// Init 2 lang rows
+addLangRow();
+addLangRow();
+
+// ===== PHOTO =====
+function loadPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('photo-preview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('photo-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== AUTO-SAVE to localStorage =====
+function saveData() {
+  const data = {};
+  document.querySelectorAll('input[type="text"], input[type="email"], textarea, select').forEach(el => {
+    if (el.id) data[el.id] = el.value;
+  });
+  document.querySelectorAll('input[type="radio"]').forEach(el => {
+    if (el.name && el.checked) data['radio_' + el.name] = el.value;
+  });
+  try {
+    localStorage.setItem('ph_form_v1', JSON.stringify(data));
+    const s = document.getElementById('save-status');
+    s.textContent = '✓ Saved';
+    setTimeout(() => s.textContent = '', 2000);
+  } catch(e) {}
+}
+
+function restoreData() {
+  try {
+    const raw = localStorage.getItem('ph_form_v1');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.entries(data).forEach(([k, v]) => {
+      if (k.startsWith('radio_')) {
+        const name = k.replace('radio_', '');
+        const el = document.querySelector(`input[type="radio"][name="${name}"][value="${v}"]`);
+        if (el) el.checked = true;
+      } else {
+        const el = document.getElementById(k);
+        if (el) el.value = v;
+      }
+    });
+  } catch(e) {}
+}
+
+document.getElementById('form-paper').addEventListener('change', saveData);
+document.getElementById('form-paper').addEventListener('input', saveData);
+window.addEventListener('load', restoreData);
+
+// ===== FORMSPREE SUBMISSION =====
+async function submitForm() {
+  const btn = document.getElementById('btn-submit');
+
+  // Basic validation
+  const nameVal = document.getElementById('name').value.trim();
+  if (!nameVal) {
+    alert('Please enter the applicant\'s full name before submitting.');
+    document.getElementById('name').focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  // Collect all named text/email/textarea fields with IDs
+  const fieldMap = {
+    'Position Applied For': document.getElementById('position')?.value,
+    'Full Name': document.getElementById('name')?.value,
+    'FIN No': document.getElementById('fin')?.value,
+    'Date of Birth': [document.getElementById('dob_d')?.value, document.getElementById('dob_m')?.value, document.getElementById('dob_y')?.value].filter(Boolean).join('/'),
+    'Country of Birth': document.getElementById('country_birth')?.value,
+    'Nationality': document.getElementById('nationality')?.value,
+    'Age': document.getElementById('age')?.value,
+    'Marital Status': document.getElementById('marital')?.value,
+    'Race': document.getElementById('race')?.value,
+    'Gender': document.querySelector('input[name="gender"]:checked')?.value || '',
+    'Religion': document.getElementById('religion')?.value,
+    'Address': document.getElementById('address')?.value,
+    'Tel (Home)': document.getElementById('tel_home')?.value,
+    'Tel (Mobile)': document.getElementById('tel_mobile')?.value,
+    'Tel (Office)': document.getElementById('tel_office')?.value,
+    'Email': document.getElementById('email')?.value,
+    'Special / Technical Skills': document.getElementById('skills')?.value,
+    'Notice Period': document.getElementById('notice_period')?.value,
+    'Earliest Start Date': document.getElementById('start_date')?.value,
+    'Expected Salary (S$)': document.getElementById('expected_salary')?.value,
+    'Driving License': document.querySelector('input[name="driving"]:checked')?.value || '',
+    'Driving License Class': document.getElementById('driving_class')?.value,
+    'Convicted': document.querySelector('input[name="convicted"]:checked')?.value || '',
+    'Dismissed / Suspended': document.querySelector('input[name="dismissed"]:checked')?.value || '',
+    'Drug Addiction': document.querySelector('input[name="drugs"]:checked')?.value || '',
+    'Smoker': document.querySelector('input[name="smoke"]:checked')?.value || '',
+    'General Details': document.getElementById('general_details')?.value,
+    'Applicant Signature Date': document.getElementById('applicant_date')?.value,
+    'Interviewer Comments': document.getElementById('interviewer_comments')?.value,
+    'Interviewer Date': document.getElementById('interviewer_date')?.value,
+  };
+
+  // Collect family members
+  const familyRows = document.querySelectorAll('#family-tbody tr');
+  let familyText = '';
+  familyRows.forEach((tr, i) => {
+    const cells = tr.querySelectorAll('input');
+    const vals = Array.from(cells).map(c => c.value.trim()).filter(Boolean);
+    if (vals.length) familyText += `Member ${i+1}: ${vals.join(' | ')}\n`;
+  });
+  if (familyText) fieldMap['Family Particulars'] = familyText.trim();
+
+  // Collect education
+  const eduBlocks = document.querySelectorAll('.edu-block');
+  let eduText = '';
+  eduBlocks.forEach((block, i) => {
+    const inputs = block.querySelectorAll('input');
+    const vals = Array.from(inputs).map(inp => inp.value.trim()).filter(Boolean);
+    if (vals.length) eduText += `Education ${i+1}: ${vals.join(' | ')}\n`;
+  });
+  if (eduText) fieldMap['Educational Background'] = eduText.trim();
+
+  // Collect employment
+  const empBlocks = document.querySelectorAll('.emp-block');
+  let empText = '';
+  empBlocks.forEach((block, i) => {
+    const inputs = block.querySelectorAll('input, textarea');
+    const title = block.querySelector('.emp-block-title')?.textContent || `Employer ${i+1}`;
+    const vals = Array.from(inputs).map(inp => inp.value.trim()).filter(Boolean);
+    if (vals.length) empText += `[${title}]: ${vals.join(' | ')}\n`;
+  });
+  if (empText) fieldMap['Employment History'] = empText.trim();
+
+  // Collect languages
+  const langRows = document.querySelectorAll('#lang-tbody tr');
+  let langText = '';
+  langRows.forEach((tr, i) => {
+    const langInput = tr.querySelector('input[type="text"]');
+    const lang = langInput?.value.trim();
+    if (!lang) return;
+    const spoken = tr.querySelector('td:nth-child(2) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
+    const read = tr.querySelector('td:nth-child(3) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
+    const written = tr.querySelector('td:nth-child(4) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
+    langText += `${lang} — Spoken: ${spoken}, Read: ${read}, Written: ${written}\n`;
+  });
+  if (langText) fieldMap['Language Proficiency'] = langText.trim();
+
+  // Build FormData
+  const formData = new FormData();
+  Object.entries(fieldMap).forEach(([k, v]) => {
+    if (v && String(v).trim()) formData.append(k, v);
+  });
+  // Subject line for email
+  formData.append('_subject', `New Application: ${nameVal} — CNC Machinist`);
+  // Disable Formspree redirect (we handle our own success state)
+  formData.append('_next', 'false');
+
+  try {
+    const res = await fetch('https://formspree.io/f/xeebeopz', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (res.ok) {
+      document.getElementById('success-overlay').classList.add('visible');
+      localStorage.removeItem('ph_form_v1'); // clear saved draft
+    } else {
+      const errData = await res.json();
+      alert('Submission failed: ' + (errData?.errors?.map(e => e.message).join(', ') || 'Unknown error. Please try again.'));
+    }
+  } catch (err) {
+    alert('Network error. Please check your connection and try again.');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✓ Submit Application';
+  }
+}
+
+// ===== PDF GENERATION =====
+async function generatePDF() {
+  const btn = document.getElementById('btn-pdf');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  // Temporarily hide add-row buttons for clean PDF
+  const addBtns = document.querySelectorAll('.add-row-btn');
+  addBtns.forEach(b => b.style.display = 'none');
+  const pageMarkers = document.querySelectorAll('.page-break-marker');
+  pageMarkers.forEach(m => m.style.display = 'none');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const element = document.getElementById('form-paper');
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const canvasW = canvas.width;
+    const canvasH = canvas.height;
+
+    const mmPerPx = pdfW / canvasW;
+    const totalHeightMm = canvasH * mmPerPx;
+
+    // Paginate
+    let yOffset = 0;
+    const pageHeightPx = pdfH / mmPerPx;
+
+    while (yOffset < canvasH) {
+      if (yOffset > 0) pdf.addPage();
+
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvasW;
+      pageCanvas.height = Math.min(pageHeightPx, canvasH - yOffset);
+
+      const ctx = pageCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, yOffset, canvasW, pageCanvas.height, 0, 0, canvasW, pageCanvas.height);
+
+      const pageImg = pageCanvas.toDataURL('image/jpeg', 0.92);
+      const sliceHeightMm = pageCanvas.height * mmPerPx;
+
+      pdf.addImage(pageImg, 'JPEG', 0, 0, pdfW, sliceHeightMm);
+      yOffset += pageHeightPx;
+    }
+
+    // Get applicant name for filename
+    const nameVal = document.getElementById('name').value.trim();
+    const filename = nameVal
+      ? `PH_Application_${nameVal.replace(/\s+/g, '_')}.pdf`
+      : 'PH_Application_for_Employment.pdf';
+
+    pdf.save(filename);
+
+  } catch (err) {
+    alert('PDF generation failed: ' + err.message);
+    console.error(err);
+  } finally {
+    addBtns.forEach(b => b.style.display = '');
+    pageMarkers.forEach(m => m.style.display = '');
+    btn.disabled = false;
+    btn.innerHTML = '&#8595; Download PDF';
+  }
+}
+</script>
+</body>
+</html>
