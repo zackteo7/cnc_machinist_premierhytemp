@@ -347,11 +347,13 @@
   }
 
   /* Language table */
-  .lang-table { width: 100%; margin-top: 4px; font-size: 11px; }
-  .lang-table td { padding: 3px 4px; }
-  .lang-table input[type="radio"] { margin-right: 2px; }
-  .lang-radio-group { display: flex; gap: 10px; align-items: center; }
-  .lang-radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; }
+  .lang-table { width: 100%; margin-top: 4px; font-size: 11px; border-collapse: collapse; }
+  .lang-table td { padding: 4px 6px; vertical-align: top; }
+  .lang-skill-block { margin-bottom: 5px; }
+  .lang-skill-block:last-child { margin-bottom: 0; }
+  .lang-skill-label { font-size: 10px; color: #555; font-weight: 600; margin-bottom: 2px; }
+  .lang-radio-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .lang-radio-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; font-size: 11px; }
 
   /* General section */
   .general-row {
@@ -880,34 +882,36 @@ function addLangRow() {
   const tr = document.createElement('tr');
   const id = 'lang_' + Date.now();
   tr.innerHTML = `
-    <td style="width:22%; padding:3px 4px;">
+    <td style="width:18%; vertical-align:middle;">
       <input class="fi" type="text" style="width:100%;" placeholder="Language">
     </td>
-    <td style="padding:3px 4px;">
-      <div style="font-size:10px; color:#555; margin-bottom:1px;">Spoken</div>
-      <div class="lang-radio-group">
-        <label><input type="radio" name="${id}_sp"> Basic</label>
-        <label><input type="radio" name="${id}_sp"> Average</label>
-        <label><input type="radio" name="${id}_sp"> Good</label>
-        <label><input type="radio" name="${id}_sp"> Very Good</label>
+    <td style="width:82%;">
+      <div class="lang-skill-block">
+        <div class="lang-skill-label">Spoken</div>
+        <div class="lang-radio-group">
+          <label><input type="radio" name="${id}_sp"> Basic</label>
+          <label><input type="radio" name="${id}_sp"> Average</label>
+          <label><input type="radio" name="${id}_sp"> Good</label>
+          <label><input type="radio" name="${id}_sp"> Very Good</label>
+        </div>
       </div>
-    </td>
-    <td style="padding:3px 4px;">
-      <div style="font-size:10px; color:#555; margin-bottom:1px;">Read</div>
-      <div class="lang-radio-group">
-        <label><input type="radio" name="${id}_rd"> Basic</label>
-        <label><input type="radio" name="${id}_rd"> Average</label>
-        <label><input type="radio" name="${id}_rd"> Good</label>
-        <label><input type="radio" name="${id}_rd"> Very Good</label>
+      <div class="lang-skill-block">
+        <div class="lang-skill-label">Read</div>
+        <div class="lang-radio-group">
+          <label><input type="radio" name="${id}_rd"> Basic</label>
+          <label><input type="radio" name="${id}_rd"> Average</label>
+          <label><input type="radio" name="${id}_rd"> Good</label>
+          <label><input type="radio" name="${id}_rd"> Very Good</label>
+        </div>
       </div>
-    </td>
-    <td style="padding:3px 4px;">
-      <div style="font-size:10px; color:#555; margin-bottom:1px;">Written</div>
-      <div class="lang-radio-group">
-        <label><input type="radio" name="${id}_wr"> Basic</label>
-        <label><input type="radio" name="${id}_wr"> Average</label>
-        <label><input type="radio" name="${id}_wr"> Good</label>
-        <label><input type="radio" name="${id}_wr"> Very Good</label>
+      <div class="lang-skill-block">
+        <div class="lang-skill-label">Written</div>
+        <div class="lang-radio-group">
+          <label><input type="radio" name="${id}_wr"> Basic</label>
+          <label><input type="radio" name="${id}_wr"> Average</label>
+          <label><input type="radio" name="${id}_wr"> Good</label>
+          <label><input type="radio" name="${id}_wr"> Very Good</label>
+        </div>
       </div>
     </td>
   `;
@@ -1057,10 +1061,13 @@ async function submitForm() {
     const langInput = tr.querySelector('input[type="text"]');
     const lang = langInput?.value.trim();
     if (!lang) return;
-    const spoken = tr.querySelector('td:nth-child(2) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
-    const read = tr.querySelector('td:nth-child(3) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
-    const written = tr.querySelector('td:nth-child(4) input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
-    langText += `${lang} — Spoken: ${spoken}, Read: ${read}, Written: ${written}\n`;
+    const skillBlocks = tr.querySelectorAll('.lang-skill-block');
+    const results = Array.from(skillBlocks).map(block => {
+      const label = block.querySelector('.lang-skill-label')?.textContent.trim() || '';
+      const checked = block.querySelector('input[type="radio"]:checked')?.closest('label')?.textContent.trim() || '-';
+      return `${label}: ${checked}`;
+    });
+    langText += `${lang} — ${results.join(', ')}\n`;
   });
   if (langText) fieldMap['Language Proficiency'] = langText.trim();
 
