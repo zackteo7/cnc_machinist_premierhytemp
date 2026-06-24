@@ -444,6 +444,89 @@
     .top-bar { display: none; }
     #form-paper { box-shadow: none; border: none; }
   }
+
+  /* ===== SIGNATURE PAD ===== */
+  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
+
+  .sig-pad-wrapper {
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background: #fafafa;
+    padding: 6px;
+    margin-bottom: 4px;
+  }
+  .sig-pad-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .sig-tab {
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    cursor: pointer;
+    background: white;
+    color: #555;
+  }
+  .sig-tab.active {
+    background: #1a3a5c;
+    color: white;
+    border-color: #1a3a5c;
+  }
+  .sig-canvas-wrap { position: relative; }
+  canvas.sig-canvas {
+    display: block;
+    width: 100%;
+    height: 90px;
+    border: 1px dashed #ccc;
+    border-radius: 3px;
+    background: white;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .sig-type-wrap { display: none; }
+  .sig-type-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #555;
+    font-family: 'Dancing Script', cursive;
+    font-size: 28px;
+    padding: 4px 6px;
+    background: white;
+    color: #1a1a1a;
+    outline: none;
+  }
+  .sig-type-preview {
+    font-family: 'Dancing Script', cursive;
+    font-size: 32px;
+    color: #1a1a1a;
+    min-height: 50px;
+    padding: 4px 6px;
+    border: 1px dashed #ccc;
+    border-radius: 3px;
+    background: white;
+    margin-top: 4px;
+    display: none;
+  }
+  .sig-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .sig-clear-btn {
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid #c00;
+    color: #c00;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sig-clear-btn:hover { background: #fff0f0; }
+  .sig-hint { font-size: 10px; color: #999; font-style: italic; }
+
 </style>
 </head>
 <body>
@@ -727,16 +810,28 @@
       <p class="declaration-text">
         I declare that the above information and documents attached hereto are true and to the best of my knowledge and belief, and I have not wilfully suppressed any materials. I understand that any false answers or statements made by me on this application or any supplement thereto will be sufficient cause for my dismissal from the company's service without any notice or monies in lieu.
       </p>
-      <div class="sig-row">
-        <div class="sig-block">
-          <div class="sig-line"></div>
-          <div class="sig-label">Signature of Applicant</div>
-        </div>
-        <div class="sig-block">
-          <div style="display:flex;align-items:baseline;gap:4px;">
-            <label class="fl">Date (DD/MM/YYYY) :</label>
-            <input class="fi" id="applicant_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px;">Signature of Applicant</div>
+        <div class="sig-pad-wrapper" id="applicant-sig-wrapper">
+          <div class="sig-pad-tabs">
+            <button class="sig-tab active" onclick="switchSigTab('applicant','draw',this)">✏️ Draw</button>
+            <button class="sig-tab" onclick="switchSigTab('applicant','type',this)">⌨️ Type</button>
           </div>
+          <div class="sig-canvas-wrap" id="applicant-draw-wrap">
+            <canvas class="sig-canvas" id="applicant-sig-canvas"></canvas>
+            <div class="sig-controls">
+              <button class="sig-clear-btn" onclick="clearSig('applicant')">✕ Clear</button>
+              <span class="sig-hint">Draw your signature above</span>
+            </div>
+          </div>
+          <div class="sig-type-wrap" id="applicant-type-wrap">
+            <input class="sig-type-input" id="applicant-sig-type" type="text" placeholder="Type your full name" oninput="updateTypeSig('applicant')">
+            <div class="sig-type-preview" id="applicant-sig-preview"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-top:6px;">
+          <label class="fl">Date (DD/MM/YYYY) :</label>
+          <input class="fi" id="applicant_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
         </div>
       </div>
     </div>
@@ -745,16 +840,28 @@
     <div class="section-header">Comments by Interviewer</div>
     <div class="section-body">
       <textarea class="comments-area" id="interviewer_comments" placeholder="Interviewer notes..."></textarea>
-      <div class="sig-row">
-        <div class="sig-block">
-          <div class="sig-line"></div>
-          <div class="sig-label">Signature of Interviewer</div>
-        </div>
-        <div class="sig-block">
-          <div style="display:flex;align-items:baseline;gap:4px;">
-            <label class="fl">Date (DD/MM/YYYY) :</label>
-            <input class="fi" id="interviewer_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px;">Signature of Interviewer</div>
+        <div class="sig-pad-wrapper" id="interviewer-sig-wrapper">
+          <div class="sig-pad-tabs">
+            <button class="sig-tab active" onclick="switchSigTab('interviewer','draw',this)">✏️ Draw</button>
+            <button class="sig-tab" onclick="switchSigTab('interviewer','type',this)">⌨️ Type</button>
           </div>
+          <div class="sig-canvas-wrap" id="interviewer-draw-wrap">
+            <canvas class="sig-canvas" id="interviewer-sig-canvas"></canvas>
+            <div class="sig-controls">
+              <button class="sig-clear-btn" onclick="clearSig('interviewer')">✕ Clear</button>
+              <span class="sig-hint">Draw your signature above</span>
+            </div>
+          </div>
+          <div class="sig-type-wrap" id="interviewer-type-wrap">
+            <input class="sig-type-input" id="interviewer-sig-type" type="text" placeholder="Type your full name" oninput="updateTypeSig('interviewer')">
+            <div class="sig-type-preview" id="interviewer-sig-preview"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-top:6px;">
+          <label class="fl">Date (DD/MM/YYYY) :</label>
+          <input class="fi" id="interviewer_date" type="text" placeholder="DD/MM/YYYY" style="flex:1;">
         </div>
       </div>
     </div>
@@ -1069,6 +1176,12 @@ async function submitForm() {
   });
   if (langText) fieldMap['Language Proficiency'] = langText.trim();
 
+  // Collect signatures
+  const applicantSig = getSigDataURL('applicant');
+  if (applicantSig) fieldMap['Applicant Signature (base64)'] = applicantSig.substring(0, 200) + '...[image attached]';
+  const interviewerSig = getSigDataURL('interviewer');
+  if (interviewerSig) fieldMap['Interviewer Signature (base64)'] = interviewerSig.substring(0, 200) + '...[image attached]';
+
   // Build FormData
   const formData = new FormData();
   Object.entries(fieldMap).forEach(([k, v]) => {
@@ -1176,6 +1289,139 @@ async function generatePDF() {
     btn.innerHTML = '&#8595; Download PDF';
   }
 }
+
+// ===== SIGNATURE PAD =====
+const sigState = {};
+
+function initSigPad(id) {
+  const canvas = document.getElementById(id + '-sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Set actual pixel dimensions
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  resizeCanvas();
+
+  sigState[id] = { drawing: false, empty: true, mode: 'draw' };
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    sigState[id].drawing = true;
+    sigState[id].empty = false;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+  function draw(e) {
+    e.preventDefault();
+    if (!sigState[id].drawing) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+  function endDraw(e) {
+    sigState[id].drawing = false;
+  }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', endDraw);
+}
+
+function clearSig(id) {
+  const canvas = document.getElementById(id + '-sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (sigState[id]) sigState[id].empty = true;
+  const typeInput = document.getElementById(id + '-sig-type');
+  const preview = document.getElementById(id + '-sig-preview');
+  if (typeInput) typeInput.value = '';
+  if (preview) { preview.textContent = ''; preview.style.display = 'none'; }
+}
+
+function switchSigTab(id, mode, btn) {
+  const drawWrap = document.getElementById(id + '-draw-wrap');
+  const typeWrap = document.getElementById(id + '-type-wrap');
+  const tabs = btn.closest('.sig-pad-tabs').querySelectorAll('.sig-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (mode === 'draw') {
+    drawWrap.style.display = 'block';
+    typeWrap.style.display = 'none';
+  } else {
+    drawWrap.style.display = 'none';
+    typeWrap.style.display = 'block';
+    const preview = document.getElementById(id + '-sig-preview');
+    const val = document.getElementById(id + '-sig-type')?.value;
+    if (val) preview.style.display = 'block';
+  }
+  if (sigState[id]) sigState[id].mode = mode;
+}
+
+function updateTypeSig(id) {
+  const input = document.getElementById(id + '-sig-type');
+  const preview = document.getElementById(id + '-sig-preview');
+  if (!input || !preview) return;
+  const val = input.value.trim();
+  preview.textContent = val;
+  preview.style.display = val ? 'block' : 'none';
+}
+
+function getSigDataURL(id) {
+  const state = sigState[id];
+  if (!state) return null;
+
+  if (state.mode === 'draw') {
+    const canvas = document.getElementById(id + '-sig-canvas');
+    if (!canvas || state.empty) return null;
+    return canvas.toDataURL('image/png');
+  } else {
+    // Render typed name onto a canvas
+    const name = document.getElementById(id + '-sig-type')?.value.trim();
+    if (!name) return null;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = 400;
+    offCanvas.height = 80;
+    const ctx = offCanvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 400, 80);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '40px "Dancing Script", cursive';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, 10, 44);
+    return offCanvas.toDataURL('image/png');
+  }
+}
+
+// Init both pads after DOM ready
+window.addEventListener('load', function() {
+  initSigPad('applicant');
+  initSigPad('interviewer');
+});
+
 </script>
 </body>
 </html>
